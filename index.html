@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radio Buscando Tu Presencia</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e3a8a);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 15px;
+      box-sizing: border-box;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.95);
+      padding: 35px 25px;
+      border-radius: 24px;
+      text-align: center;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+      max-width: 340px;
+      width: 100%;
+    }
+    h1 { font-size: 1.4rem; margin: 0 0 8px 0; }
+    #estado { color: #38bdf8; font-size: 0.95rem; margin-bottom: 25px; min-height: 22px; }
+    .play-btn {
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      font-size: 32px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+      transition: transform 0.2s;
+    }
+    .play-btn:active { transform: scale(0.92); }
+    #installBtn {
+      display: none;
+      width: 100%;
+      margin-top: 25px;
+      padding: 12px;
+      border-radius: 12px;
+      border: none;
+      background: #22c55e;
+      color: #052e16;
+      font-weight: bold;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+    .ayuda {
+      margin-top: 20px;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      background: rgba(255,255,255,0.05);
+      padding: 10px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Radio Buscando Tu Presencia</h1>
+    <p id="estado">Toca Play para iniciar</p>
+    <button class="play-btn" id="btn">▶</button>
+    <button id="installBtn">📲 Instalar App en el celular</button>
+
+    <div class="ayuda">
+      <strong>¿Cómo descargar?</strong><br>
+      Toca el botón verde de arriba o abre los 3 puntos (⋮) del navegador y elige <em>"Instalar aplicación"</em>.
+    </div>
+  </div>
+
+  <script>
+    const streamUrl = "https://streamingchilenos.com";
+    const audio = new Audio();
+    audio.preload = "none";
+
+    const btn = document.getElementById('btn');
+    const estado = document.getElementById('estado');
+    let sonando = false;
+
+    btn.onclick = () => {
+      if (!sonando) {
+        estado.innerText = "Conectando al servidor...";
+        audio.src = streamUrl + "?nocache=" + Date.now();
+        audio.load();
+        
+        audio.play().then(() => {
+          sonando = true;
+          btn.innerText = "❚❚";
+          estado.innerText = "🔴 Al aire en vivo";
+        }).catch(() => {
+          estado.innerText = "Error de conexión. Reintenta.";
+        });
+      } else {
+        audio.pause();
+        audio.src = "";
+        sonando = false;
+        btn.innerText = "▶";
+        estado.innerText = "Pausado";
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    let eventoInstalar;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      eventoInstalar = e;
+      installBtn.style.display = 'block';
+    });
+
+    installBtn.onclick = async () => {
+      if (eventoInstalar) {
+        eventoInstalar.prompt();
+        const { outcome } = await eventoInstalar.userChoice;
+        if (outcome === 'accepted') {
+          installBtn.style.display = 'none';
+        }
+        eventoInstalar = null;
+      }
+    };
+  </script>
+</body>
+</html>
